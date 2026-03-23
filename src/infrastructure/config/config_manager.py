@@ -144,6 +144,61 @@ class ConfigManager:
         """获取分析完成后是否自动发送报告"""
         return self._get_group("auto_analysis").get("auto_analysis_send_report", True)
 
+    def get_send_report_mode(self) -> str:
+        """获取发送报告限制模式 (whitelist/blacklist/none)"""
+        return self._get_group("auto_analysis").get("send_report_mode", "none")
+
+    def get_send_report_list(self) -> list[str]:
+        """获取发送报告群组列表（用于黑白名单）"""
+        return self._get_group("auto_analysis").get("send_report_list", [])
+
+    def is_group_allowed_to_send_report(self, group_id_or_umo: str) -> bool:
+        """根据配置的白/黑名单判断是否允许向该群发送自动分析报告"""
+        mode = self.get_send_report_mode().lower()
+        if mode not in ("whitelist", "blacklist", "none"):
+            mode = "none"
+
+        if mode == "none":
+            return True
+
+        glist = [str(g) for g in self.get_send_report_list()]
+        target = str(group_id_or_umo)
+
+        target_simple_id = target.split(":")[-1] if ":" in target else target
+        target_parent_id = (
+            target_simple_id.split("#", 1)[0]
+            if "#" in target_simple_id
+            else target_simple_id
+        )
+
+        def _is_match(
+            item: str,
+            target: str,
+            target_simple_id: str,
+            target_parent_id: str,
+        ) -> bool:
+            if ":" in item:
+                if item == target:
+                    return True
+                if "#" in target_simple_id:
+                    if ":" not in target:
+                        return False
+                    item_prefix, item_tail = item.rsplit(":", 1)
+                    target_prefix, _ = target.rsplit(":", 1)
+                    return (
+                        item_prefix == target_prefix and item_tail == target_parent_id
+                    )
+                return False
+            if item == target_simple_id:
+                return True
+            return "#" in target_simple_id and item == target_parent_id
+
+        matched = any(
+            _is_match(item, target, target_simple_id, target_parent_id)
+            for item in glist
+        )
+        return matched if mode == "whitelist" else not matched
+
     def get_output_format(self) -> str:
         """获取输出格式"""
         return self._get_group("basic").get("output_format", "image")
@@ -421,6 +476,16 @@ class ConfigManager:
     def set_auto_analysis_send_report(self, enabled: bool):
         """设置是否在分析后自动发送报告"""
         self._ensure_group("auto_analysis")["auto_analysis_send_report"] = enabled
+        self.config.save_config()
+
+    def set_send_report_mode(self, mode: str):
+        """设置发送报告权限模式"""
+        self._ensure_group("auto_analysis")["send_report_mode"] = mode
+        self.config.save_config()
+
+    def set_send_report_list(self, group_list: list[str]):
+        """设置发送报告黑白名单"""
+        self._ensure_group("auto_analysis")["send_report_list"] = group_list
         self.config.save_config()
 
     def set_min_messages_threshold(self, threshold: int):

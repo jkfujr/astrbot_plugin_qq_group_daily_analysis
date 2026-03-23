@@ -123,7 +123,27 @@
                 "type": "bool",
                 "description": "分析后自动发送报告",
                 "default": true,
-                "hint": "开启后，定时自动分析完成后会像以往一样将报告推送到群聊；关闭后，仅在后台完成数据归档和本地报告文件生成（静默分析），不会打扰群聊。"
+                "hint": "总开关。开启后，分析定时完成后会尝试将报告推送到群聊；关闭后，仅在后台完成数据归档和本地报告生成，绝对不会发送到任何群聊。"
+            },
+            "send_report_mode": {
+                "description": "发送报告组限制模式",
+                "type": "string",
+                "options": [
+                    "whitelist",
+                    "blacklist",
+                    "none"
+                ],
+                "default": "none",
+                "hint": "搭配发信开关使用。whitelist: 仅允许向列表内群聊发送报告；blacklist: 拒绝向列表内群聊发送；none: 不设限制（全发）"
+            },
+            "send_report_list": {
+                "type": "list",
+                "description": "发送群聊白/黑名单列表",
+                "default": [],
+                "hint": "黑白名单模式下使用的群组列表。支持填写 AstrBot UMO (如 xxxxx:GroupMessage:123456) 或纯群号 (如 123456 将尝试匹配)。",
+                "items": {
+                    "type": "string"
+                }
             }
         }
     },
