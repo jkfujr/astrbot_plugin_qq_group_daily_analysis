@@ -455,6 +455,7 @@ class AutoScheduler:
                 adapter.platform_id
                 if hasattr(adapter, "platform_id")
                 else target_platform_id,
+                silent_mode=not self.config_manager.get_auto_analysis_send_report()
             )
 
             logger.info(f"群 {group_id} 自动分析任务执行成功")
@@ -759,6 +760,7 @@ class AutoScheduler:
                 adapter.platform_id
                 if hasattr(adapter, "platform_id")
                 else target_platform_id,
+                silent_mode=not self.config_manager.get_auto_analysis_send_report()
             )
 
             # 清理过期批次（保留 2 倍窗口范围的数据作为缓冲）

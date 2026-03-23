@@ -140,6 +140,10 @@ class ConfigManager:
         """获取是否启用自动分析"""
         return self._get_group("auto_analysis").get("enable_auto_analysis", False)
 
+    def get_auto_analysis_send_report(self) -> bool:
+        """获取分析完成后是否自动发送报告"""
+        return self._get_group("auto_analysis").get("auto_analysis_send_report", True)
+
     def get_output_format(self) -> str:
         """获取输出格式"""
         return self._get_group("basic").get("output_format", "image")
@@ -234,18 +238,23 @@ class ConfigManager:
         """获取是否保持原始人格设定"""
         return self._get_group("analysis_features").get("keep_original_persona", False)
 
-    def get_pdf_output_dir(self) -> str:
-        """获取PDF输出目录"""
+    def get_report_output_dir(self) -> str:
+        """获取报告统一输出目录"""
         try:
             plugin_name = "astrbot_plugin_qq_group_daily_analysis"
             data_path = Path(get_astrbot_data_path())
             default_path = data_path / "plugin_data" / plugin_name / "reports"
-            return self._get_group("pdf").get("pdf_output_dir", str(default_path))
+            
+            # 优先读新版配置
+            report_storage = self._get_group("report_storage")
+            if "report_output_dir" in report_storage:
+                return report_storage.get("report_output_dir", str(default_path))
+                
+            # 兼容读取旧版配置 pdf_output_dir
+            pdf_group = self._get_group("pdf")
+            return pdf_group.get("pdf_output_dir", str(default_path))
         except Exception:
-            return self._get_group("pdf").get(
-                "pdf_output_dir",
-                "data/plugins/astrbot_plugin_qq_group_daily_analysis/reports",
-            )
+            return "data/plugins/astrbot_plugin_qq_group_daily_analysis/reports"
 
     def get_bot_self_ids(self) -> list:
         """获取机器人自身的 ID 列表 (兼容 bot_qq_ids)"""
@@ -255,11 +264,17 @@ class ConfigManager:
             ids = basic.get("bot_qq_ids", [])
         return ids
 
-    def get_pdf_filename_format(self) -> str:
-        """获取PDF文件名格式"""
-        return self._get_group("pdf").get(
-            "pdf_filename_format", "群聊分析报告_{group_id}_{date}.pdf"
-        )
+    def get_report_filename_format(self) -> str:
+        """获取报告文件名格式 (无后缀)"""
+        
+        report_storage = self._get_group("report_storage")
+        if "report_filename_format" in report_storage:
+            return report_storage.get("report_filename_format", "群聊分析报告_{group_id}_{date}")
+            
+        old_pdf_format = self._get_group("pdf").get("pdf_filename_format", "群聊分析报告_{group_id}_{date}.pdf")
+        if old_pdf_format.endswith(".pdf"):
+            return old_pdf_format[:-4]
+        return old_pdf_format
 
     def get_topic_analysis_prompt(self, style: str = "topic_prompt") -> str:
         """获取话题分析提示词模板"""
@@ -399,6 +414,11 @@ class ConfigManager:
         self._ensure_group("auto_analysis")["enable_auto_analysis"] = enabled
         self.config.save_config()
 
+    def set_auto_analysis_send_report(self, enabled: bool):
+        """设置是否在分析后自动发送报告"""
+        self._ensure_group("auto_analysis")["auto_analysis_send_report"] = enabled
+        self.config.save_config()
+
     def set_min_messages_threshold(self, threshold: int):
         """设置最小消息阈值"""
         self._ensure_group("basic")["min_messages_threshold"] = threshold
@@ -443,14 +463,14 @@ class ConfigManager:
         self._ensure_group("analysis_features")["max_golden_quotes"] = count
         self.config.save_config()
 
-    def set_pdf_output_dir(self, directory: str):
-        """设置PDF输出目录"""
-        self._ensure_group("pdf")["pdf_output_dir"] = directory
+    def set_report_output_dir(self, directory: str):
+        """设置报告产出目录"""
+        self._ensure_group("report_storage")["report_output_dir"] = directory
         self.config.save_config()
 
-    def set_pdf_filename_format(self, format_str: str):
-        """设置PDF文件名格式"""
-        self._ensure_group("pdf")["pdf_filename_format"] = format_str
+    def set_report_filename_format(self, format_str: str):
+        """设置报告文件名格式"""
+        self._ensure_group("report_storage")["report_filename_format"] = format_str
         self.config.save_config()
 
     def get_report_template(self) -> str:
@@ -589,11 +609,14 @@ class ConfigManager:
 
     def get_browser_path(self) -> str:
         """获取自定义浏览器路径"""
+        report_storage = self._get_group("report_storage")
+        if "browser_path" in report_storage:
+            return report_storage.get("browser_path", "")
         return self._get_group("pdf").get("browser_path", "")
 
     def set_browser_path(self, path: str):
         """设置自定义浏览器路径"""
-        self._ensure_group("pdf")["browser_path"] = path
+        self._ensure_group("report_storage")["browser_path"] = path
         self.config.save_config()
 
     def reload_playwright(self) -> bool:

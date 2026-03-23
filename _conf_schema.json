@@ -112,6 +112,12 @@
                 "items": {
                     "type": "string"
                 }
+            },
+            "auto_analysis_send_report": {
+                "type": "bool",
+                "description": "分析后自动发送报告",
+                "default": true,
+                "hint": "开启后，定时自动分析完成后会像以往一样将报告推送到群聊；关闭后，仅在后台完成数据归档和本地报告文件生成（静默分析），不会打扰群聊。"
             }
         }
     },
@@ -321,28 +327,28 @@
             }
         }
     },
-    "pdf": {
-        "description": "PDF 设置",
+    "report_storage": {
+        "description": "分析报告本地存储设置",
         "type": "object",
-        "hint": "PDF 报告输出相关配置，包括输出目录、浏览器路径和文件名格式",
+        "hint": "统一管理所有格式（图片、文本、PDF）分析报告的本地存档行为",
         "items": {
-            "pdf_output_dir": {
+            "report_output_dir": {
                 "type": "string",
-                "description": "PDF输出目录",
+                "description": "报告统一输出目录",
                 "default": "data/plugins/astrbot_plugin_qq_group_daily_analysis/reports",
-                "hint": "PDF报告文件的保存目录"
+                "hint": "无论是png图片、文本md文档还是pdf，生成后均会存放在此文件夹中长久归档"
+            },
+            "report_filename_format": {
+                "type": "string",
+                "description": "报告文件名格式",
+                "default": "群聊分析报告_{group_id}_{date}",
+                "hint": "报告文件名格式，无需加后缀。支持变量：{group_id}(群号)、{date}(日期)。插件会自动根据生成格式补齐 .png / .md / .pdf 后缀"
             },
             "browser_path": {
                 "type": "string",
-                "description": "自定义浏览器路径",
+                "description": "自定义浏览器路径 (生成 PDF 时使用)",
                 "default": "",
                 "hint": "要填写的话请你清楚自己在干什么。自定义浏览器的可执行文件路径（如 Chrome 或 Edge 的 .exe 文件）。提示：如果是在网页后台设置，则直接输入普通路径即可（如 C:\\Program Files\\...）；如果是手动编辑 config.json 文件，请务必使用双反斜杠 '\\\\' 分隔路径。"
-            },
-            "pdf_filename_format": {
-                "type": "string",
-                "description": "PDF文件名格式",
-                "default": "群聊分析报告_{group_id}_{date}.pdf",
-                "hint": "PDF文件名格式，支持变量：{group_id}(群号)、{date}(日期)"
             }
         }
     },
